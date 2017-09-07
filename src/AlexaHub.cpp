@@ -11,7 +11,14 @@ AlexaHub::Light::operator bool() const {
 AlexaHub::AlexaHub()
 	:	hub{PORT}
 	,	server{ioService, SERVER_PORT, [this](const std::string& msg) {
-			return processCloudMsg(msg);
+			try {
+				return processCloudMsg(msg);
+			}
+			catch(const std::exception& e) {
+				std::cout << "[Error] AlexaHub::processCloudMsg: " << e.what() << std::endl;
+
+				return std::string{};
+			}
 		}}
 	,	ioWork{std::make_unique<io_service::work>(ioService)}
 	,	updateTimer{ioService, std::chrono::milliseconds(1000), [this]() {

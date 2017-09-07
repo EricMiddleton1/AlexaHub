@@ -53,21 +53,36 @@ void CloudServer::startListen() {
 			while(parseMessage(msgBuffer, msg)) {
 				auto response = new std::string{handler(msg)};
 				
-				socket.async_send(buffer(*response), [response](const boost::system::error_code& ec,
-					std::size_t bytesTransferred) {
-					if(ec) {
-						std::cout << "[Error] CloudServer::cbSendResponse: " << ec.message() << std::endl;
-					}
-					else if(bytesTransferred != response->size()) {
-						std::cout << "[Error] CloudServer::cbSendResponse: Tried to send " << response->size()
-							<< " bytes, actually sent " << bytesTransferred << std::endl;
-					}
-					else {
-						std::cout << "[Info] CloudServer::cbSendResponse: Response sent" << std::endl;
-					}
+				if(response->length() > 0) {
+					socket.async_send(buffer(*response), [response](const boost::system::error_code& ec,
+						std::size_t bytesTransferred) {
+						if(ec) {
+							std::cout << "[Error] CloudServer::cbSendResponse: " << ec.message() << std::endl;
+						}
+						else if(bytesTransferred != response->size()) {
+							std::cout << "[Error] CloudServer::cbSendResponse: Tried to send " << response->size()
+								<< " bytes, actually sent " << bytesTransferred << std::endl;
+						}
+						else {
+							std::cout << "[Info] CloudServer::cbSendResponse: Response sent" << std::endl;
+						}
 
+						delete response;
+					});
+				}
+				else {
 					delete response;
-				});
+
+					std::cout << "[Info] CloudServer: Empty response, closing socket" << std::endl;
+
+					socket.cancel();
+					socket.close();
+					msgBuffer.clear();
+
+					startAccept();
+
+					return;
+				}
 			}
 
 			startListen();
