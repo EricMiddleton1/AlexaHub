@@ -38,7 +38,11 @@ void CloudServer::startListen() {
 		size_t bytesTransferred) {
 
 		if(ec || bytesTransferred == 0) {
+			if(ec) {
+				std::cout << "[Error] CloudServer::cbReceive: " << ec.message() << std::endl;
+			}
 			std::cout << "[Info] CloudServer: Client Disconnected" << std::endl;
+			std::cout << msgBuffer << std::endl;
 
 			socket.cancel();
 			socket.close();

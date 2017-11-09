@@ -1,40 +1,45 @@
 #pragma once
 
-#include <vector> //std::vector
-#include <memory> //std::shared_ptr
-#include <thread> //std::thread
-#include <iostream> //For debugging
-#include <mutex>
+#include <vector>
+#include <memory>
+#include <thread>
+#include <iostream>
+#include <deque>
+#include <map>
 
-#include <boost/asio.hpp> //networking, io_service
-#include <boost/bind.hpp> //boost::bind
+#include <boost/asio.hpp>
 #include <boost/signals2.hpp>
 
-#include "LightNode.hpp"
+#include "Light.hpp"
 #include "PeriodicTimer.hpp"
 
 
-//Forward declaration of friend class
 class Rhopalia;
+
+struct LightNode {
+	LightNode(const std::string& name);
+
+	std::string name;
+	std::vector<std::shared_ptr<Light>> lights;
+};
+
 
 class LightHub
 {
 public:
-	enum ListenerType_e {
-		NODE_DISCOVER
-	};
+	using NodeIterator = std::map<boost::asio::ip::address, LightNode>::const_iterator;
 
-	//Exception codes
-	static const uint16_t LIGHT_HUB_NODE_NOT_FOUND = 1;
-	static const uint16_t LIGHT_HUB_INVALID_PAYLOAD = 2;
+	enum class ListenerType {
+		LightDiscover
+	};
 
 	LightHub(uint16_t port, uint32_t discoverPeriod = 1000);
 	~LightHub();
 
 	template<class T>
-	void addListener(ListenerType_e listenType, T slot) {
-		if(listenType == NODE_DISCOVER) {
-			sigNodeDiscover.connect(slot);
+	void addListener(ListenerType listenType, T slot) {
+		if(listenType == ListenerType::LightDiscover) {
+			sigLightDiscover.connect(slot);
 		}
 		else {
 			std::cout << "[Error] LightNode::addListener: Invalid listener type"
@@ -42,31 +47,26 @@ public:
 		}
 	}
 
-	std::shared_ptr<LightNode> getNodeByName(const std::string&);
-
-	std::shared_ptr<LightNode> getNodeByAddress(const boost::asio::ip::address&);
+	NodeIterator begin() const;
+	NodeIterator end() const;
 
 	size_t getNodeCount() const;
 
-	size_t getConnectedNodeCount() const;
-
-	std::vector<std::shared_ptr<LightNode>> getNodes() const;
-
 private:
 	friend class Rhopalia;
+	friend class Light;
 
-	//Function to update all nodes in vector
-	void updateLights();
+	void update(Light& light);
 
-	//Thread to run io_service.run()
 	void threadRoutine();
 
-	//Starts an async read on the UDP socket
 	void startListening();
 
 	void discover();
 
-	//Callbacks for network operations
+	void sendDatagram(const boost::asio::ip::address& addr,
+		const std::vector<uint8_t>& data);
+
 	void handleSendBroadcast(const boost::system::error_code&,
 		size_t bytesTransferred);
 
@@ -77,12 +77,9 @@ private:
 	void handleDiscoveryTimer(const boost::system::error_code&);
 
 	//Signals
-	boost::signals2::signal<void(std::shared_ptr<LightNode>)> sigNodeDiscover;
+	boost::signals2::signal<void(std::shared_ptr<Light>)> sigLightDiscover;
 
-	//Vector of nodes
-	//That have at one point responded
-	std::vector<std::shared_ptr<LightNode>> nodes;
-	mutable std::mutex nodeMutex;
+	std::map<boost::asio::ip::address, LightNode> nodes;
 
 	//Thread stuff
 	boost::asio::io_service ioService;
@@ -94,6 +91,8 @@ private:
 	boost::asio::ip::udp::endpoint receiveEndpoint;
 	uint16_t port;
 	std::array<uint8_t, 512> readBuffer;
+	std::deque<std::vector<uint8_t>> sendQueue;
+	mutable std::mutex sendMutex;
 
 	//Autodiscovery stuff
 	PeriodicTimer discoveryTimer;

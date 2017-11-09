@@ -4,15 +4,15 @@
 
 using namespace boost::asio;
 
-AlexaHub::Light::operator bool() const {
-	return strip.get() != nullptr;
-}
-
 AlexaHub::AlexaHub()
 	:	hub{PORT}
 	,	server{ioService, SERVER_PORT, [this](const std::string& msg) {
 			try {
-				return processCloudMsg(msg);
+				auto response = processCloudMsg(msg);
+
+				std::cout << "\n" << response << std::endl;
+
+				return response;
 			}
 			catch(const std::exception& e) {
 				std::cout << "[Error] AlexaHub::processCloudMsg: " << e.what() << std::endl;
@@ -22,14 +22,14 @@ AlexaHub::AlexaHub()
 		}}
 	,	ioWork{std::make_unique<io_service::work>(ioService)}
 	,	updateTimer{ioService, std::chrono::milliseconds(1000), [this]() {
-		auto lights = getLights();
-/*
-		std::cout << "Discovered Lights:\n";
-		for(auto& light : lights) {
-			std::cout << "\t" << light.id << "\n";
-		}
-		std::cout << std::endl;
-*/
+			for(const auto& node : hub) {
+				//std::cout << node.second.name << "\n";
+
+				for(const auto& light : node.second.lights) {
+					//std::cout << "\t" << light->getName() << "\n";
+				}
+			}
+			//std::cout << std::endl;
 	}} {
 }
 
@@ -41,35 +41,23 @@ void AlexaHub::run() {
 	ioService.run();
 }
 
-std::vector<AlexaHub::Light> AlexaHub::getLights() const {
-	std::vector<Light> strips;
+std::vector<std::shared_ptr<Light>> AlexaHub::getLights() const {
+	std::vector<std::shared_ptr<Light>> lights;
 
-	auto nodes = hub.getNodes();
-
-	for(auto& node : nodes) {
-		int index = 0;
-		std::for_each(node->stripBegin(), node->stripEnd(),
-			[&strips, &node, &index](auto& strip) {
-				auto type = strip->getType();
-				if(type == LightStrip::Type::Analog || type == LightStrip::Type::Digital) {
-					strips.push_back({strip, getLightName(node, index++)});
-				}
-			});
+	for(auto& node : hub) {
+		for(const auto& light : node.second.lights) {
+			lights.push_back(light);
+		}
 	}
 
-	return strips;
+	return lights;
 }
 
-std::string AlexaHub::getLightName(const std::shared_ptr<LightNode>& node, int index) {
-
-	return node->getName() + ":" + std::to_string(index);
-}
-
-AlexaHub::Light AlexaHub::getLightById(const std::string& id) const {
+std::shared_ptr<Light> AlexaHub::getLightById(const std::string& id) const {
 	auto lights = getLights();
 
-	auto itr = std::find_if(lights.begin(), lights.end(), [&id](const Light& l) {
-		return id == l.id;
+	auto itr = std::find_if(lights.begin(), lights.end(), [&id](const auto& l) {
+		return id == l->getFullName();
 	});
 
 	if(itr == lights.end()) {
@@ -100,9 +88,9 @@ std::string AlexaHub::processCloudMsg(const std::string& msg) {
 		if(device) {
 			if(command == "SetColorRequest") {
 				const auto hsb = root["payload"]["color"];
-				auto c = Color::HSV(hsb["hue"].asDouble(),
-					hsb["saturation"].asDouble(),
-					hsb["brightness"].asDouble());
+				auto c = Color::HSV(255.f*hsb["hue"].asDouble()/360.f,
+					255.f*hsb["saturation"].asDouble(),
+					255.f*hsb["brightness"].asDouble());
 
 					response = processSetColor(device, c);
 			}
@@ -151,15 +139,13 @@ Json::Value AlexaHub::processDiscover() {
 		types.append("LIGHT");
 		device["applianceTypes"] = types;
 
-		device["applianceId"] = light.id;
+		device["applianceId"] = light->getFullName();
 		device["manufacturerName"] = "ICEE";
 		device["modelName"] = "ICEE - SmartLight";
 		device["version"] = "0.1";
 
-		auto name = light.id;
-		std::replace(name.begin(), name.end(), ':', ' ');
-		device["friendlyName"] = name;
-		device["friendlyDescription"] = name + " connected via AlexaHub by ICEE";
+		device["friendlyName"] = light->getName();
+		device["friendlyDescription"] = light->getName() + " connected via AlexaHub by ICEE";
 		device["isReachable"] = true;
 		
 		auto actions = Json::Value{Json::arrayValue};
@@ -183,8 +169,8 @@ Json::Value AlexaHub::processDiscover() {
 	return response;
 }
 
-Json::Value AlexaHub::processSetColor(Light& device, const Color& c) {
-	device.strip->tcpSetColor(c);
+Json::Value AlexaHub::processSetColor(std::shared_ptr<Light>& device, const Color& c) {
+	device->getBuffer().setAll(c);
 
 	Json::Value response;
 
@@ -194,14 +180,17 @@ Json::Value AlexaHub::processSetColor(Light& device, const Color& c) {
 	response["header"]["payloadVersion"] = 2;
 
 	response["payload"]["achievedState"]["color"]["hue"] = c.getHue();
-	response["payload"]["achievedState"]["color"]["saturation"] = c.getHSVSaturation();
-	response["payload"]["achievedState"]["color"]["brightness"] = c.getValue();
+	response["payload"]["achievedState"]["color"]["saturation"] = c.getSat();
+	response["payload"]["achievedState"]["color"]["brightness"] = c.getVal();
 
 	return response;
 }
 
-Json::Value AlexaHub::processSetPercentage(Light& device, double brightness) {
-	device.strip->tcpSetBrightness(brightness / 100.0);
+Json::Value AlexaHub::processSetPercentage(std::shared_ptr<Light>& device, 
+	double brightness) {
+	
+	device->getBuffer().setAll({255.f*brightness/100.f, 255.f*brightness/100.f,
+		255.f*brightness/100.f});
 
 	Json::Value response;
 
@@ -213,8 +202,8 @@ Json::Value AlexaHub::processSetPercentage(Light& device, double brightness) {
 	return response;
 }
 
-Json::Value AlexaHub::processTurnOn(Light& device) {
-	device.strip->tcpSetBrightness(1.0);
+Json::Value AlexaHub::processTurnOn(std::shared_ptr<Light>& device) {
+	device->getBuffer().setAll({255, 255, 255});
 
 	Json::Value response;
 
@@ -226,8 +215,8 @@ Json::Value AlexaHub::processTurnOn(Light& device) {
 	return response;
 }
 
-Json::Value AlexaHub::processTurnOff(Light& device) {
-	device.strip->tcpSetBrightness(0.0);
+Json::Value AlexaHub::processTurnOff(std::shared_ptr<Light>& device) {
+	device->getBuffer().setAll({0, 0, 0});
 
 	Json::Value response;
 
