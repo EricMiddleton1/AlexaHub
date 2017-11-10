@@ -2,6 +2,9 @@
 
 #include <vector>
 #include <memory>
+#include <string>
+#include <map>
+#include <functional>
 
 #include "LightHub.hpp"
 #include "Light.hpp"
@@ -26,12 +29,13 @@ private:
 
 	std::string processCloudMsg(const std::string& msg);
 
-	Json::Value processSetColor(std::shared_ptr<Light>& device, const Color& c);
-	Json::Value processSetPercentage(std::shared_ptr<Light>& device, double brightness);
-	Json::Value processTurnOn(std::shared_ptr<Light>& device);
-	Json::Value processTurnOff(std::shared_ptr<Light>& device);
-
 	Json::Value processDiscover();
+	Json::Value processPowerController(const std::string& command,
+		const Json::Value& input);
+	Json::Value processBrightnessController(const std::string& command,
+		const Json::Value& input);
+	Json::Value processColorController(const std::string& command,
+		const Json::Value& input);
 
 	LightHub hub;
 
@@ -39,5 +43,6 @@ private:
 	std::unique_ptr<boost::asio::io_service::work> ioWork;
 	CloudServer server;
 
-	PeriodicTimer updateTimer;
+	std::map<std::string,
+		std::function<Json::Value(const std::string&, const Json::Value)>> handlers;
 };
