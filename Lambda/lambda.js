@@ -3,8 +3,13 @@
 var net = require('net');
 Buffer = require('buffer').Buffer;
 
-var addr = 'IP-ADDR/HOSTNAME';
-var port = PORT;
+/**
+ * Environment variables addr and port must be defined
+ * addr: IP address or hostname for CloudServer
+ * port: listening port for CloudServer
+ */
+var addr = process.env.addr;
+var port = process.env.port;
 
 /**
  * Utility functions
@@ -31,7 +36,7 @@ function forwardToHub(request, callback) {
     .on("end", function() {
         var str = completeData.toString();
         var response = JSON.parse(str);
-        log('DEBUG', `Hub response: ${response}`);
+        log('DEBUG', `Hub response: ${JSON.stringify(response, null, 2)}`);
         client.destroy();
         
         callback(null, response);
