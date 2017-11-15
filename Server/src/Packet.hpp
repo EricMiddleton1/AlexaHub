@@ -33,9 +33,10 @@ public:
 	static Packet TurnOff(uint8_t lightID, uint8_t transitionPeriod);
 	static Packet SetBrightness(uint8_t lightID, uint8_t transitionPeriod,
 		uint8_t brightness);
-	static Packet SetColor(uint8_t lightID, uint8_t transitionPeriod, const Color& color);
-	static Packet UpdateColor(uint8_t lightID, uint8_t transitionPeriod,
-		const std::vector<Color>& leds);
+	static Packet SetColor(uint8_t lightID, uint8_t hPeriod, uint8_t sPeriod,
+		const Color& color);
+	static Packet UpdateColor(uint8_t lightID, uint8_t hPeriod, uint8_t sPeriod,
+		uint8_t vPeriod, const std::vector<Color>& leds);
 	static Packet ChangeBrightness(uint8_t lightID, uint8_t transitionPeriod,
 		int8_t deltaBrightness);
 

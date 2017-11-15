@@ -187,7 +187,8 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 
 void LightHub::update(Light& light, uint8_t period) {
 	sendDatagram(light.getAddress(),
-		Packet::UpdateColor(light.getLightID(), period, light.getPixels()).asDatagram());
+		Packet::UpdateColor(light.getLightID(), period, period, period,
+			light.getPixels()).asDatagram());
 }
 
 void LightHub::turnOn(Light& light, uint8_t period) {
@@ -207,7 +208,7 @@ void LightHub::setBrightness(Light& light, uint8_t period, uint8_t brightness) {
 
 void LightHub::setColor(Light& light, uint8_t period, const Color& c) {
 	sendDatagram(light.getAddress(),
-		Packet::SetColor(light.getLightID(), period, c).asDatagram());
+		Packet::SetColor(light.getLightID(), period, period, c).asDatagram());
 }
 
 void LightHub::changeBrightness(Light& light, uint8_t period, int8_t deltaBrightness) {

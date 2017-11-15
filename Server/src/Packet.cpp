@@ -71,29 +71,34 @@ Packet Packet::SetBrightness(uint8_t lightID, uint8_t transitionPeriod,
 	uint8_t brightness) {
 	Packet p{ID::UpdateColor, lightID};
 	
-	p.payload.push_back(transitionPeriod);
 	p.payload.push_back(0x01); //Only update value (brightness)
+	p.payload.push_back(transitionPeriod);
 	p.payload.push_back(brightness);
 
 	return p;
 }
 
-Packet Packet::SetColor(uint8_t lightID, uint8_t transitionPeriod, const Color& c) {
+Packet Packet::SetColor(uint8_t lightID, uint8_t hPeriod, uint8_t sPeriod,
+	const Color& c) {
 	Packet p{ID::UpdateColor, lightID};
 	
-	p.payload.push_back(transitionPeriod);
 	p.payload.push_back(0x06); //Update H, S
+	p.payload.push_back(hPeriod);
+	p.payload.push_back(sPeriod);
 	p.payload.push_back(c.getHue());
 	p.payload.push_back(c.getSat());
 
 	return p;
 }
 
-Packet Packet::UpdateColor(uint8_t lightID, uint8_t transitionPeriod,
-	const std::vector<Color>& leds) {
+Packet Packet::UpdateColor(uint8_t lightID, uint8_t hPeriod, uint8_t sPeriod,
+	uint8_t vPeriod, const std::vector<Color>& leds) {
 	Packet p{ID::UpdateColor, lightID};
-	p.payload.push_back(transitionPeriod);
+	
 	p.payload.push_back(0x07); //Update H, S, V
+	p.payload.push_back(hPeriod);
+	p.payload.push_back(sPeriod);
+	p.payload.push_back(vPeriod);
 
 	for(const auto& led : leds) {
 		p.payload.push_back(led.getHue());
