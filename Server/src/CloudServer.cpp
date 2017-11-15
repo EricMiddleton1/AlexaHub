@@ -43,9 +43,14 @@ void CloudServer::startListen() {
 			}
 			std::cout << "[Info] CloudServer: Client Disconnected" << std::endl;
 			std::cout << msgBuffer << std::endl;
-
-			socket.cancel();
-			socket.close();
+			
+			try {
+				socket.cancel();
+				socket.close();
+			}
+			catch(const std::exception& e) {
+				std::cerr << "[Error] CloudServer::cbReceive: " << e.what() << std::endl;
+			}
 			msgBuffer.clear();
 
 			startAccept();
@@ -58,7 +63,7 @@ void CloudServer::startListen() {
 				auto response = new std::string{handler(msg)};
 				
 				if(response->length() > 0) {
-					socket.async_send(buffer(*response), [response](const boost::system::error_code& ec,
+					socket.async_send(buffer(*response), [this, response](const boost::system::error_code& ec,
 						std::size_t bytesTransferred) {
 						if(ec) {
 							std::cout << "[Error] CloudServer::cbSendResponse: " << ec.message() << std::endl;
@@ -72,6 +77,9 @@ void CloudServer::startListen() {
 						}
 
 						delete response;
+
+						socket.close();
+						startAccept();
 					});
 				}
 				else {
