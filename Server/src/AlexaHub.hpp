@@ -23,6 +23,7 @@ public:
 private:
 	const uint16_t PORT = 5492;
 	const uint16_t SERVER_PORT = 9160;
+	const uint8_t TRANSITION_PERIOD = 100;
 
 	std::vector<std::shared_ptr<Light>> getLights() const;
 	std::shared_ptr<Light> getLightById(const std::string& id) const;

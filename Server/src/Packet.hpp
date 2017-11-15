@@ -29,12 +29,15 @@ public:
 	static Packet NodeInfoResponse(uint8_t lightCount, const std::string& name);
 	static Packet LightInfo(uint8_t lightID);
 	static Packet LightInfoResponse(uint16_t ledCount, const std::string& name);
-	static Packet TurnOn(uint8_t lightID);
-	static Packet TurnOff(uint8_t lightID);
-	static Packet SetBrightness(uint8_t lightID, uint8_t brightness);
-	static Packet SetColor(uint8_t lightID, const Color& color);
-	static Packet UpdateColor(uint8_t lightID, const std::vector<Color>& leds);
-	static Packet ChangeBrightness(uint8_t lightID, int8_t deltaBrightness);
+	static Packet TurnOn(uint8_t lightID, uint8_t transitionPeriod);
+	static Packet TurnOff(uint8_t lightID, uint8_t transitionPeriod);
+	static Packet SetBrightness(uint8_t lightID, uint8_t transitionPeriod,
+		uint8_t brightness);
+	static Packet SetColor(uint8_t lightID, uint8_t transitionPeriod, const Color& color);
+	static Packet UpdateColor(uint8_t lightID, uint8_t transitionPeriod,
+		const std::vector<Color>& leds);
+	static Packet ChangeBrightness(uint8_t lightID, uint8_t transitionPeriod,
+		int8_t deltaBrightness);
 
 	ID getID() const;
 	uint8_t getLightID() const;

@@ -53,26 +53,35 @@ Packet Packet::LightInfoResponse(uint16_t ledCount, const std::string& name) {
 	return p;
 }
 
-Packet Packet::TurnOn(uint8_t lightID) {
-	return {ID::TurnOn, lightID};
+Packet Packet::TurnOn(uint8_t lightID, uint8_t transitionPeriod) {
+	Packet p{ID::TurnOn, lightID};
+	p.payload.push_back(transitionPeriod);
+
+	return p;
 }
 
-Packet Packet::TurnOff(uint8_t lightID) {
-	return {ID::TurnOff, lightID};
+Packet Packet::TurnOff(uint8_t lightID, uint8_t transitionPeriod) {
+	Packet p{ID::TurnOff, lightID};
+	p.payload.push_back(transitionPeriod);
+
+	return p;
 }
 
-Packet Packet::SetBrightness(uint8_t lightID, uint8_t brightness) {
+Packet Packet::SetBrightness(uint8_t lightID, uint8_t transitionPeriod,
+	uint8_t brightness) {
 	Packet p{ID::UpdateColor, lightID};
-
+	
+	p.payload.push_back(transitionPeriod);
 	p.payload.push_back(0x01); //Only update value (brightness)
 	p.payload.push_back(brightness);
 
 	return p;
 }
 
-Packet Packet::SetColor(uint8_t lightID, const Color& c) {
+Packet Packet::SetColor(uint8_t lightID, uint8_t transitionPeriod, const Color& c) {
 	Packet p{ID::UpdateColor, lightID};
-
+	
+	p.payload.push_back(transitionPeriod);
 	p.payload.push_back(0x06); //Update H, S
 	p.payload.push_back(c.getHue());
 	p.payload.push_back(c.getSat());
@@ -80,8 +89,10 @@ Packet Packet::SetColor(uint8_t lightID, const Color& c) {
 	return p;
 }
 
-Packet Packet::UpdateColor(uint8_t lightID, const std::vector<Color>& leds) {
+Packet Packet::UpdateColor(uint8_t lightID, uint8_t transitionPeriod,
+	const std::vector<Color>& leds) {
 	Packet p{ID::UpdateColor, lightID};
+	p.payload.push_back(transitionPeriod);
 	p.payload.push_back(0x07); //Update H, S, V
 
 	for(const auto& led : leds) {
@@ -93,8 +104,10 @@ Packet Packet::UpdateColor(uint8_t lightID, const std::vector<Color>& leds) {
 	return p;
 }
 
-Packet Packet::ChangeBrightness(uint8_t lightID, int8_t deltaBrightness) {
+Packet Packet::ChangeBrightness(uint8_t lightID, uint8_t transitionPeriod,
+	int8_t deltaBrightness) {
 	Packet p{ID::ChangeBrightness, lightID};
+	p.payload.push_back(transitionPeriod);
 	p.payload.push_back(deltaBrightness);
 
 	return p;

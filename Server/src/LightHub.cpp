@@ -185,33 +185,33 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 	startListening();
 }
 
-void LightHub::update(Light& light) {
+void LightHub::update(Light& light, uint8_t period) {
 	sendDatagram(light.getAddress(),
-		Packet::UpdateColor(light.getLightID(), light.getPixels()).asDatagram());
+		Packet::UpdateColor(light.getLightID(), period, light.getPixels()).asDatagram());
 }
 
-void LightHub::turnOn(Light& light) {
+void LightHub::turnOn(Light& light, uint8_t period) {
 	sendDatagram(light.getAddress(),
-		Packet::TurnOn(light.getLightID()).asDatagram());
+		Packet::TurnOn(light.getLightID(), period).asDatagram());
 }
 
-void LightHub::turnOff(Light& light) {
+void LightHub::turnOff(Light& light, uint8_t period) {
 	sendDatagram(light.getAddress(),
-		Packet::TurnOff(light.getLightID()).asDatagram());
+		Packet::TurnOff(light.getLightID(), period).asDatagram());
 }
 
-void LightHub::setBrightness(Light& light, uint8_t brightness) {
+void LightHub::setBrightness(Light& light, uint8_t period, uint8_t brightness) {
 	sendDatagram(light.getAddress(),
-		Packet::SetBrightness(light.getLightID(), brightness).asDatagram());
+		Packet::SetBrightness(light.getLightID(), period, brightness).asDatagram());
 }
 
-void LightHub::setColor(Light& light, const Color& c) {
+void LightHub::setColor(Light& light, uint8_t period, const Color& c) {
 	sendDatagram(light.getAddress(),
-		Packet::SetColor(light.getLightID(), c).asDatagram());
+		Packet::SetColor(light.getLightID(), period, c).asDatagram());
 }
 
-void LightHub::changeBrightness(Light& light, int8_t deltaBrightness) {
+void LightHub::changeBrightness(Light& light, uint8_t period, int8_t deltaBrightness) {
 	sendDatagram(light.getAddress(),
-		Packet::ChangeBrightness(light.getLightID(), deltaBrightness).asDatagram());
+		Packet::ChangeBrightness(light.getLightID(), period, deltaBrightness).asDatagram());
 }
 

@@ -198,10 +198,10 @@ Json::Value AlexaHub::processPowerController(const string& command,
 			<< std::endl;
 	}
 	else if(command == "TurnOn") {
-		hub.turnOn(*light);
+		hub.turnOn(*light, TRANSITION_PERIOD);
 	}
 	else if(command == "TurnOff") {
-		hub.turnOff(*light);
+		hub.turnOff(*light, TRANSITION_PERIOD);
 	}
 	else {
 		std::cerr << "[Error] AlexaHub: Unrecognized command: " << command
@@ -237,7 +237,7 @@ Json::Value AlexaHub::processBrightnessController(const string& command,
 	else if(command == "SetBrightness") {
 		auto brightness = 255*input["directive"]["payload"]["brightness"].asInt()/100;
 
-		hub.setBrightness(*light, brightness);
+		hub.setBrightness(*light, TRANSITION_PERIOD, brightness);
 		
 		result["context"]["properties"] = Json::Value{Json::arrayValue};
 		property["namespace"] = "Alexa.BrightnessController";
@@ -255,7 +255,7 @@ Json::Value AlexaHub::processBrightnessController(const string& command,
 		property["value"] = 50;
 		result["context"]["properties"].append(property);
 
-		hub.changeBrightness(*light, deltaBrightness);
+		hub.changeBrightness(*light, TRANSITION_PERIOD, deltaBrightness);
 	}
 	else {
 		std::cerr << "[Error] AlexaHub: Unrecognized command: " << command
@@ -300,7 +300,7 @@ Json::Value AlexaHub::processColorController(const string& command,
 			255.f*hsb["saturation"].asDouble(),
 			255.f*hsb["brightness"].asDouble());
 
-		hub.setColor(*light, color);
+		hub.setColor(*light, TRANSITION_PERIOD, color);
 	}
 	else {
 		std::cerr << "[Error] AlexaHub: Unrecognized command: " << command
