@@ -113,8 +113,12 @@ Json::Value AlexaHub::processDiscover() {
 
 	Json::Value endpoints{Json::arrayValue};
 
+	std::cout << "[Info] Lights: \n";
+
 	auto lights = getLights();
 	for(auto& light : lights) {
+		std::cout << "\t" << light->getFullName() << "\n";
+
 		Json::Value endpoint;
 
 		auto types = Json::Value{Json::arrayValue};
@@ -160,6 +164,8 @@ Json::Value AlexaHub::processDiscover() {
 		endpoint["capabilities"] = capabilities;
 		endpoints.append(endpoint);
 	}
+
+	std::cout << std::endl;
 
 	response["event"]["header"]["messageId"] = "0000-0000-0000-0000";
 	response["event"]["header"]["name"] = "Discover.Response";
@@ -300,7 +306,7 @@ Json::Value AlexaHub::processColorController(const string& command,
 			255.f*hsb["saturation"].asDouble(),
 			255.f*hsb["brightness"].asDouble());
 
-		hub.setColor(*light, color);
+		hub.setColor(*light, 255.f*hsb["hue"].asDouble()/360.f, 255*hsb["saturation"].asDouble());
 	}
 	else {
 		std::cerr << "[Error] AlexaHub: Unrecognized command: " << command

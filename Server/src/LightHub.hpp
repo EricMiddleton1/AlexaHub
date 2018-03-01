@@ -57,7 +57,7 @@ public:
 	void turnOn(Light& light);
 	void turnOff(Light& light);
 	void setBrightness(Light& light, uint8_t brightness);
-	void setColor(Light& light, const Color& c);
+	void setColor(Light& light, uint8_t hue, uint8_t sat);
 	void changeBrightness(Light& light, int8_t deltaBrightness);
 
 private:
