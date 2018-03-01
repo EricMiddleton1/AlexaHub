@@ -146,7 +146,7 @@ void LightHub::handleReceive(const boost::system::error_code& ec,
 						}
 						else {
 							auto ledCount = Packet::parse16(p.data().begin());
-							string name{data.begin()+2, data.end()};
+							string name{data.begin()+3, data.end()};
 
 							auto light = find_if(node->second.lights.begin(), node->second.lights.end(),
 								[&name](const std::shared_ptr<Light>& light) {
